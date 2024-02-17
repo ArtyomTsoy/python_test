@@ -1,7 +1,9 @@
 import sys
-from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QLineEdit, QPushButton, QTextEdit, QVBoxLayout, QWidget, QMessageBox
+import cloud_service_module # Якобы модуль для работы с облачным сервисом
+from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QLineEdit, QPushButton, QTextEdit, QVBoxLayout, QWidget, QMessageBox, QPushButton, QFileDialog
 import requests
 import os
+from contact_links_dialog import ContactLinksDialog # Якобы диалоговое окно для добавления связей контактов
 
 class JSONPlaceholderApp(QMainWindow):
     def __init__(self):
@@ -31,7 +33,31 @@ class JSONPlaceholderApp(QMainWindow):
         self.save_button.clicked.connect(self.save_response)
         self.layout.addWidget(self.save_button)
 
+        self.upload_button = QPushButton("Загрузить фотографии")
+        self.upload_button.clicked.connect(self.upload_photos)
+        self.layout.addWidget(self.upload_button)
+
         self.central_widget.setLayout(self.layout)
+
+    def add_contact_links(self):
+        dialog = ContactLinksDialog(self)
+        if dialog.exec() == ContactLinksDialog.Accepted:
+            selected_contacts = dialog.get_selected_contacts()
+
+    def save_to_cloud(self):
+        data = self.response_output.toPlainText()
+        success = cloud_service_module.upload_data(data)
+        if success:
+            QMessageBox.information(self, "Сохранение в облако", "Данные успешно сохранены в облаке")
+        else:
+            QMessageBox.critical(self, "Ошибка", "Не удалось сохранить данные в облаке")
+
+    def upload_photos(self):
+        options = QFileDialog.Options()
+        file_names, _ = QFileDialog.getOpenFileNames(self, "Выбрать фотографии", "",
+                                                     "Image Files (*.png *.jpg *.jpeg *.bmp)", options=options)
+        if file_names:
+            QMessageBox.information(self, "Загрузка фотографий", f"Выбрано {len(file_names)} файлов")
 
     def send_request(self):
         user_id = self.id_input.text()
